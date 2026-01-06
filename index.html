@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gourmet Central - Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+            transition: background-color 0.3s ease;
+        }
+
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1.5rem;
+        }
+
+        .token-number {
+            font-size: clamp(4rem, 15vw, 8rem);
+            line-height: 1;
+            font-weight: 800;
+            background: linear-gradient(to bottom right, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .pulse-animation {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .5; }
+        }
+
+        .view-transition {
+            transition: all 0.3s ease-in-out;
+        }
+
+        .hidden-view {
+            display: none;
+        }
+
+        .scroll-hide::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .scroll-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <!-- Navigation Header -->
+    <nav class="border-b border-slate-800 bg-slate-900/50 sticky top-0 z-50 backdrop-blur-md">
+        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="bg-sky-500 p-2 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <span class="font-extrabold text-xl tracking-tight hidden sm:inline">Gourmet Central</span>
+            </div>
+
+            <div id="clock" class="text-lg font-mono font-semibold text-sky-400">00:00:00 AM</div>
+
+            <div class="flex gap-2">
+                <button onclick="switchView('customer')" id="btn-customer" class="px-4 py-2 rounded-lg font-bold text-sm transition-all bg-sky-600 text-white">
+                    Display Board
+                </button>
+                <button onclick="switchView('kitchen')" id="btn-kitchen" class="px-4 py-2 rounded-lg font-bold text-sm transition-all bg-slate-800 text-slate-400 hover:bg-slate-700">
+                    Kitchen Terminal
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto p-4 md:p-8">
+        
+        <!-- CUSTOMER VIEW -->
+        <div id="view-customer" class="view-transition space-y-8">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Main Display: Now Serving -->
+                <div class="lg:col-span-2 space-y-6">
+                    <div class="glass-card p-10 text-center relative overflow-hidden min-h-[400px] flex flex-col justify-center">
+                        <div class="absolute top-6 left-6 flex items-center gap-2">
+                            <span class="h-3 w-3 bg-green-500 rounded-full pulse-animation"></span>
+                            <span class="text-xs font-bold uppercase tracking-widest text-slate-400">Now Serving</span>
+                        </div>
+                        <div id="current-token-display" class="token-number my-8">042</div>
+                        <div class="text-2xl font-semibold text-slate-300">Please proceed to Counter 1</div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="glass-card p-6 border-slate-700/50">
+                            <p class="text-slate-400 text-xs font-bold uppercase mb-1">Average Wait</p>
+                            <p class="text-3xl font-bold">~12 <span class="text-sm text-slate-500">mins</span></p>
+                        </div>
+                        <div class="glass-card p-6 border-slate-700/50">
+                            <p class="text-slate-400 text-xs font-bold uppercase mb-1">Orders in Queue</p>
+                            <p id="queue-count-display" class="text-3xl font-bold">5</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Upcoming Sidebar -->
+                <div class="space-y-4">
+                    <h2 class="text-xl font-bold flex items-center gap-2">
+                        Upcoming Orders
+                    </h2>
+                    <div id="customer-queue-list" class="space-y-3 max-h-[600px] overflow-y-auto scroll-hide">
+                        <!-- Dynamic Content -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- KITCHEN TERMINAL VIEW -->
+        <div id="view-kitchen" class="view-transition hidden-view space-y-6">
+            <div class="flex justify-between items-end">
+                <div>
+                    <h2 class="text-3xl font-extrabold text-white">Kitchen Operations</h2>
+                    <p class="text-slate-400">Manage incoming and ready orders</p>
+                </div>
+                <button onclick="addOrder()" class="bg-green-600 hover:bg-green-500 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all active:scale-95">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                    </svg>
+                    New Order
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Active Order -->
+                <div class="space-y-4">
+                    <h3 class="text-sm font-bold uppercase tracking-widest text-sky-400">Current Preparation</h3>
+                    <div class="glass-card p-8 border-sky-500/30 bg-sky-500/5 text-center">
+                        <span class="text-slate-400 block mb-2">TOKEN</span>
+                        <div id="kitchen-current-token" class="text-7xl font-black text-white mb-6">042</div>
+                        <button onclick="advanceQueue()" class="w-full bg-sky-600 hover:bg-sky-500 py-4 rounded-xl font-bold text-lg shadow-lg shadow-sky-900/20 transition-all active:scale-95">
+                            Mark as Ready
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Management List -->
+                <div class="space-y-4">
+                    <h3 class="text-sm font-bold uppercase tracking-widest text-slate-400">Pending Queue</h3>
+                    <div id="kitchen-queue-list" class="space-y-3">
+                        <!-- Dynamic Content -->
+                    </div>
+                    <div id="kitchen-empty-state" class="hidden text-center py-20 border-2 border-dashed border-slate-800 rounded-3xl text-slate-600">
+                        All orders completed.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-8 right-8 bg-sky-500 text-white px-6 py-3 rounded-full font-bold shadow-2xl translate-y-20 opacity-0 transition-all duration-300 z-[100]">
+        Token #000 is ready!
+    </div>
+
+    <script>
+        // State Management
+        const AVG_PREP_TIME = 8;
+        let currentServing = 42;
+        let queue = [43, 44, 45, 46, 47];
+        let currentView = 'customer';
+        
+        // Fix for webkit and audio context
+        let audioCtx = null;
+
+        function switchView(view) {
+            currentView = view;
+            const customerView = document.getElementById('view-customer');
+            const kitchenView = document.getElementById('view-kitchen');
+            const btnCustomer = document.getElementById('btn-customer');
+            const btnKitchen = document.getElementById('btn-kitchen');
+
+            if (view === 'customer') {
+                customerView.classList.remove('hidden-view');
+                kitchenView.classList.add('hidden-view');
+                btnCustomer.className = "px-4 py-2 rounded-lg font-bold text-sm transition-all bg-sky-600 text-white";
+                btnKitchen.className = "px-4 py-2 rounded-lg font-bold text-sm transition-all bg-slate-800 text-slate-400 hover:bg-slate-700";
+            } else {
+                customerView.classList.add('hidden-view');
+                kitchenView.classList.remove('hidden-view');
+                btnKitchen.className = "px-4 py-2 rounded-lg font-bold text-sm transition-all bg-sky-600 text-white";
+                btnCustomer.className = "px-4 py-2 rounded-lg font-bold text-sm transition-all bg-slate-800 text-slate-400 hover:bg-slate-700";
+            }
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            const tokenStr = currentServing.toString().padStart(3, '0');
+            
+            // Customer View Updates
+            document.getElementById('current-token-display').innerText = tokenStr;
+            document.getElementById('queue-count-display').innerText = queue.length;
+            
+            const customerList = document.getElementById('customer-queue-list');
+            customerList.innerHTML = '';
+            
+            queue.forEach((token, index) => {
+                const waitTime = (index + 1) * AVG_PREP_TIME;
+                const div = document.createElement('div');
+                div.className = 'glass-card p-4 flex justify-between items-center border-l-4 border-l-sky-500';
+                div.innerHTML = `
+                    <div>
+                        <span class="text-slate-400 text-[10px] block font-bold uppercase tracking-tighter">Token</span>
+                        <span class="text-xl font-extrabold tracking-tight">#${token.toString().padStart(3, '0')}</span>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-slate-400 text-[10px] block font-bold uppercase tracking-tighter">Est. Ready</span>
+                        <span class="text-sky-400 font-bold">${waitTime}m</span>
+                    </div>
+                `;
+                customerList.appendChild(div);
+            });
+
+            // Kitchen View Updates
+            document.getElementById('kitchen-current-token').innerText = tokenStr;
+            const kitchenList = document.getElementById('kitchen-queue-list');
+            const kitchenEmpty = document.getElementById('kitchen-empty-state');
+            
+            kitchenList.innerHTML = '';
+            if (queue.length === 0) {
+                kitchenEmpty.classList.remove('hidden');
+            } else {
+                kitchenEmpty.classList.add('hidden');
+                queue.forEach((token) => {
+                    const div = document.createElement('div');
+                    div.className = 'bg-slate-800/50 p-4 rounded-xl flex justify-between items-center border border-slate-700';
+                    div.innerHTML = `
+                        <div class="flex items-center gap-4">
+                            <span class="text-2xl font-black text-slate-400 tracking-tighter">#${token.toString().padStart(3, '0')}</span>
+                            <span class="text-xs font-bold text-slate-500 uppercase">Incoming Order</span>
+                        </div>
+                        <span class="text-slate-500 text-sm">Preparing...</span>
+                    `;
+                    kitchenList.appendChild(div);
+                });
+            }
+        }
+
+        async function advanceQueue() {
+            if (queue.length > 0) {
+                currentServing = queue.shift();
+                showToast(`Token #${currentServing.toString().padStart(3, '0')} called to Counter!`);
+                updateDisplay();
+                await playDing();
+            } else {
+                showToast("No orders in the queue to process.");
+            }
+        }
+
+        function addOrder() {
+            const lastTokenInQueue = queue.length > 0 ? queue[queue.length - 1] : currentServing;
+            queue.push(lastTokenInQueue + 1);
+            updateDisplay();
+            if (currentView === 'kitchen') showToast("New order registered!");
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.innerText = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        // Fixed Audio Logic for webkit and modern browser policies
+        async function playDing() {
+            try {
+                // Use window.AudioContext or window.webkitAudioContext correctly
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContextClass) return;
+
+                if (!audioCtx) {
+                    audioCtx = new AudioContextClass();
+                }
+
+                // Modern browsers require resuming the context after a user interaction
+                if (audioCtx.state === 'suspended') {
+                    await audioCtx.resume();
+                }
+
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(880, audioCtx.currentTime); // A5
+                osc.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.5); // A4
+                
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+                
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.5);
+            } catch(e) {
+                console.error("Audio playback failed:", e);
+            }
+        }
+
+        // Clock Update (12-hour format)
+        setInterval(() => {
+            const now = new Date();
+            document.getElementById('clock').innerText = now.toLocaleTimeString([], { 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                second: '2-digit', 
+                hour12: true 
+            });
+        }, 1000);
+
+        // Initial Load
+        window.onload = () => {
+            updateDisplay();
+        };
+    </script>
+</body>
+</html>

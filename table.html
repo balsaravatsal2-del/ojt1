@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guest Experience | Saffron & Silk</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --gold: #c5a059;
+            --stone: #1c1917;
+            --cream: #f8f5f0;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--cream);
+            color: var(--stone);
+        }
+        h1, h2, h3, .font-serif {
+            font-family: 'Playfair Display', serif;
+        }
+        .bg-gold { background-color: var(--gold); }
+        .text-gold { color: var(--gold); }
+        .border-gold { border-color: var(--gold); }
+        
+        .fade-in { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #eee; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 10px; }
+
+        .category-btn.active {
+            background-color: var(--stone);
+            color: white;
+            border-color: var(--gold);
+        }
+
+        .hero-gradient {
+            background: radial-gradient(circle at center, #2c2724 0%, #1c1917 100%);
+        }
+
+        .menu-card {
+            border-left: 4px solid transparent;
+            transition: all 0.3s ease;
+        }
+        .menu-card:hover {
+            border-left-color: var(--gold);
+            transform: translateX(4px);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- STEP 1: ONBOARDING / TABLE SELECTION -->
+    <div id="onboarding" class="fixed inset-0 z-50 bg-stone-950 flex items-center justify-center p-6 hero-gradient">
+        <div class="max-w-md w-full bg-white/95 backdrop-blur-sm p-8 rounded-2xl shadow-2xl text-center fade-in">
+            <div class="mb-6">
+                <span class="text-gold text-4xl block mb-2 font-serif">Saffron & Silk</span>
+                <div class="h-px w-20 bg-gold mx-auto mb-4"></div>
+                <h2 class="text-2xl font-bold uppercase tracking-widest text-stone-800">Welcome</h2>
+                <p class="text-stone-500 text-sm mt-2">Please enter the number of guests for your party.</p>
+            </div>
+
+            <div class="flex flex-col gap-4">
+                <div class="relative">
+                    <input type="number" id="guestCount" min="1" max="5" placeholder="Number of Guests (1-5)" 
+                        class="w-full border-2 border-stone-200 rounded-xl px-4 py-4 text-center text-xl font-bold focus:border-gold outline-none transition-all">
+                    <div class="text-[10px] text-stone-400 mt-2 uppercase tracking-tighter">We have tables for up to 5 guests.</div>
+                </div>
+                <button onclick="allocateTable()" class="bg-stone-900 text-gold font-bold py-4 rounded-xl hover:bg-stone-800 transition-all uppercase tracking-widest">
+                    Find My Table
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN DASHBOARD (Hidden until table is allocated) -->
+    <div id="dashboard" class="hidden flex-1 flex flex-col md:flex-row overflow-hidden max-h-screen">
+        
+        <!-- Sidebar Navigation -->
+        <nav class="w-full md:w-20 bg-stone-900 flex md:flex-col items-center justify-between p-4 border-b md:border-b-0 md:border-r border-gold/30">
+            <div class="text-gold font-serif text-xl md:mb-8">S&S</div>
+            <div class="flex md:flex-col gap-6">
+                <button class="text-gold transition-transform hover:scale-110" title="Menu">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    </svg>
+                </button>
+                <button class="text-stone-500 hover:text-gold transition-colors" onclick="toggleCartMobile()">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                    </svg>
+                </button>
+            </div>
+            <div class="hidden md:block">
+                <div class="bg-gold text-stone-900 text-[10px] font-black rounded-full w-8 h-8 flex items-center justify-center" id="displayTableNum">0</div>
+            </div>
+        </nav>
+
+        <!-- Menu Area -->
+        <main class="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-8">
+            <header class="flex justify-between items-end mb-8">
+                <div>
+                    <h1 class="text-4xl font-bold text-stone-900">Exquisite Menu</h1>
+                    <p class="text-stone-500 italic">Table <span id="allocatedTableDisplay">...</span> • <span id="partySizeDisplay">...</span> Guests</p>
+                </div>
+                <div class="hidden md:flex gap-2" id="catFilters">
+                    <button onclick="filterCategory('all')" class="category-btn active px-4 py-1.5 rounded-full border border-stone-300 text-xs font-bold uppercase tracking-wider transition-all">All</button>
+                    <button onclick="filterCategory('starter')" class="category-btn px-4 py-1.5 rounded-full border border-stone-300 text-xs font-bold uppercase tracking-wider transition-all">Starters</button>
+                    <button onclick="filterCategory('mains')" class="category-btn px-4 py-1.5 rounded-full border border-stone-300 text-xs font-bold uppercase tracking-wider transition-all">Mains</button>
+                    <button onclick="filterCategory('beverage')" class="category-btn px-4 py-1.5 rounded-full border border-stone-300 text-xs font-bold uppercase tracking-wider transition-all">Vintages</button>
+                    <button onclick="filterCategory('dessert')" class="category-btn px-4 py-1.5 rounded-full border border-stone-300 text-xs font-bold uppercase tracking-wider transition-all">Desserts</button>
+                </div>
+            </header>
+
+            <div id="menuGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Items injected via JS -->
+            </div>
+        </main>
+
+        <!-- Order Sidebar -->
+        <aside id="orderCart" class="w-full md:w-96 bg-white border-l border-stone-200 flex flex-col shadow-2xl transition-transform duration-300 transform md:translate-x-0 fixed md:relative inset-0 z-40 translate-x-full md:translate-x-0">
+            <div class="p-6 border-b border-stone-100 flex justify-between items-center">
+                <div>
+                    <h3 class="text-xl font-bold uppercase tracking-tighter">Your Order</h3>
+                    <p class="text-[10px] text-stone-400 uppercase tracking-widest">Saffron & Silk Experience</p>
+                </div>
+                <button onclick="toggleCartMobile()" class="md:hidden text-stone-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l18 18" />
+                    </svg>
+                </button>
+            </div>
+
+            <div id="cartList" class="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
+                <!-- Cart items -->
+                <div class="text-center py-20 opacity-30 italic text-sm">Select items from the menu to begin.</div>
+            </div>
+
+            <div class="p-6 bg-stone-50 border-t border-stone-200">
+                <div class="flex justify-between items-end mb-4">
+                    <span class="text-stone-500 text-xs uppercase font-bold">Estimated Total</span>
+                    <span class="text-2xl font-bold text-stone-900" id="totalPrice">₹ 0</span>
+                </div>
+                <button onclick="confirmOrder()" id="orderBtn" disabled class="w-full bg-stone-900 text-gold py-4 rounded-xl font-bold uppercase tracking-[0.2em] disabled:opacity-50 disabled:cursor-not-allowed transition-all transform active:scale-95">
+                    Place Order
+                </button>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Confirmation Overlay -->
+    <div id="confirmation" class="fixed inset-0 z-[60] bg-stone-900/90 backdrop-blur-md hidden flex items-center justify-center p-6 text-center">
+        <div class="max-w-md w-full text-white">
+            <div class="w-20 h-20 bg-gold rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-stone-900" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                </svg>
+            </div>
+            <h2 class="text-4xl font-serif mb-2">Order Confirmed</h2>
+            <p class="text-stone-400 mb-8 uppercase tracking-widest text-sm">Our chefs are now preparing your selection for Table <span id="finalTableNum">0</span></p>
+            <button onclick="location.reload()" class="border border-gold text-gold px-8 py-3 rounded-full hover:bg-gold hover:text-stone-900 transition-all font-bold uppercase text-xs tracking-widest">
+                Start New Experience
+            </button>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 bg-stone-900 text-white px-6 py-3 rounded-full shadow-2xl opacity-0 transition-opacity pointer-events-none z-[100] border border-gold/50 flex items-center gap-3">
+        <span class="text-gold">●</span> <span id="toastMsg"></span>
+    </div>
+
+    <script>
+        const tables = [
+            { id: 1, capacity: 4 }, { id: 2, capacity: 4 }, { id: 3, capacity: 4 }, { id: 4, capacity: 4 },
+            { id: 5, capacity: 2 }, { id: 6, capacity: 2 }, { id: 7, capacity: 2 }, { id: 8, capacity: 2 },
+            { id: 9, capacity: 5 }, { id: 10, capacity: 5 }
+        ];
+
+        const menuItems = [
+            { id: 1, name: "Hara Bhara Kebab", category: "starter", price: 350, desc: "Spinach and green pea patties with mild spices." },
+            { id: 2, name: "Paneer Tikka", category: "starter", price: 420, desc: "Classic tandoor-grilled cottage cheese cubes." },
+            { id: 3, name: "Chicken Seekh", category: "starter", price: 480, desc: "Spiced minced chicken skewers grilled to perfection." },
+            { id: 4, name: "Dal Makhani", category: "mains", price: 450, desc: "Creamy slow-cooked black lentils, a house favorite." },
+            { id: 5, name: "Butter Chicken", category: "mains", price: 580, desc: "Tender chicken in a rich, buttery tomato gravy." },
+            { id: 7, name: "Mutton Rogan Josh", category: "mains", price: 650, desc: "Traditional Kashmiri lamb curry with aromatic spices." },
+            { id: 14, name: "Sula Shiraz", category: "beverage", price: 450, desc: "Indian red wine with notes of pepper and mocha." },
+            { id: 16, name: "Old Fashioned", category: "beverage", price: 550, desc: "Bourbon, bitters, and orange zest." },
+            { id: 9, name: "Gulab Jamun", category: "dessert", price: 180, desc: "Soft khoya balls soaked in saffron sugar syrup." },
+            { id: 10, name: "Mango Kulfi", category: "dessert", price: 220, desc: "Traditional Indian frozen dessert with alphonso mango." }
+        ];
+
+        let cart = [];
+        let activeTable = null;
+        let guests = 0;
+
+        function allocateTable() {
+            const count = parseInt(document.getElementById('guestCount').value);
+            if (isNaN(count) || count < 1 || count > 5) {
+                showToast("Please enter 1-5 guests");
+                return;
+            }
+
+            guests = count;
+            
+            if (guests <= 2) activeTable = tables.find(t => t.capacity === 2);
+            else if (guests <= 4) activeTable = tables.find(t => t.capacity === 4);
+            else if (guests <= 5) activeTable = tables.find(t => t.capacity === 5);
+
+            document.getElementById('onboarding').classList.add('hidden');
+            document.getElementById('dashboard').classList.remove('hidden');
+            document.getElementById('displayTableNum').innerText = activeTable.id;
+            document.getElementById('allocatedTableDisplay').innerText = activeTable.id.toString().padStart(2, '0');
+            document.getElementById('partySizeDisplay').innerText = guests;
+            
+            renderMenu('all');
+        }
+
+        function renderMenu(category) {
+            const grid = document.getElementById('menuGrid');
+            grid.innerHTML = '';
+            
+            const filtered = category === 'all' ? menuItems : menuItems.filter(i => i.category === category);
+            
+            filtered.forEach(item => {
+                const cartItem = cart.find(c => c.id === item.id);
+                const qty = cartItem ? cartItem.qty : 0;
+                
+                grid.innerHTML += `
+                    <div class="bg-white rounded-xl p-6 shadow-sm border border-stone-200 menu-card flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-start mb-2">
+                                <h4 class="font-bold text-lg text-stone-800">${item.name}</h4>
+                                <span class="text-stone-400 text-[10px] uppercase tracking-widest font-bold">${item.category}</span>
+                            </div>
+                            <p class="text-xs text-stone-500 mb-4 italic leading-relaxed">${item.desc || 'No description available.'}</p>
+                        </div>
+                        <div class="flex justify-between items-center pt-4 border-t border-stone-50">
+                            <p class="text-gold font-bold text-lg">₹ ${item.price}</p>
+                            <div class="flex items-center gap-3 bg-stone-100 px-3 py-1.5 rounded-full border border-stone-200">
+                                <button onclick="updateCart(${item.id}, -1)" class="text-stone-400 hover:text-stone-900 font-bold px-1">-</button>
+                                <span class="text-xs font-bold w-4 text-center">${qty}</span>
+                                <button onclick="updateCart(${item.id}, 1)" class="text-stone-400 hover:text-stone-900 font-bold px-1">+</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function filterCategory(cat) {
+            document.querySelectorAll('.category-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            renderMenu(cat);
+        }
+
+        function updateCart(id, delta) {
+            const item = menuItems.find(i => i.id === id);
+            const index = cart.findIndex(c => c.id === id);
+            
+            if (index > -1) {
+                cart[index].qty += delta;
+                if (cart[index].qty <= 0) cart.splice(index, 1);
+            } else if (delta > 0) {
+                cart.push({ ...item, qty: 1 });
+            }
+            
+            renderCart();
+            renderMenu(document.querySelector('.category-btn.active')?.innerText.toLowerCase() || 'all');
+        }
+
+        function renderCart() {
+            const list = document.getElementById('cartList');
+            const totalDisplay = document.getElementById('totalPrice');
+            const orderBtn = document.getElementById('orderBtn');
+
+            if (cart.length === 0) {
+                list.innerHTML = `<div class="text-center py-20 opacity-30 italic text-sm">Select items from the menu to begin.</div>`;
+                totalDisplay.innerText = `₹ 0`;
+                orderBtn.disabled = true;
+                return;
+            }
+
+            orderBtn.disabled = false;
+            let total = 0;
+            list.innerHTML = cart.map(item => {
+                total += item.price * item.qty;
+                return `
+                    <div class="flex justify-between items-center py-2 border-b border-stone-50 animate-fadeIn">
+                        <div>
+                            <h5 class="text-sm font-bold text-stone-800">${item.name}</h5>
+                            <p class="text-[10px] text-stone-400 uppercase">₹ ${item.price} × ${item.qty}</p>
+                        </div>
+                        <div class="font-bold text-stone-900 text-sm">₹ ${item.price * item.qty}</div>
+                    </div>
+                `;
+            }).join('');
+
+            totalDisplay.innerText = `₹ ${total.toLocaleString('en-IN')}`;
+        }
+
+        function confirmOrder() {
+            document.getElementById('finalTableNum').innerText = activeTable.id;
+            document.getElementById('confirmation').classList.remove('hidden');
+        }
+
+        function toggleCartMobile() {
+            const cartPanel = document.getElementById('orderCart');
+            cartPanel.classList.toggle('translate-x-full');
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMsg').innerText = msg;
+            toast.style.opacity = '1';
+            setTimeout(() => toast.style.opacity = '0', 2500);
+        }
+
+        renderCart();
+    </script>
+</body>
+</html>

@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saffron & Silk | Restaurant Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f5f0;
+        }
+        h1, h2, h3, .font-serif {
+            font-family: 'Playfair Display', serif;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #c5a059;
+            border-radius: 10px;
+        }
+        .bg-gold { background-color: #c5a059; }
+        .text-gold { color: #c5a059; }
+        .border-gold { border-color: #c5a059; }
+        .view-hidden { display: none !important; }
+        
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 34px;
+            height: 20px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #444;
+            transition: .4s;
+            border-radius: 20px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 14px; width: 14px;
+            left: 3px; bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider { background-color: #c5a059; }
+        input:checked + .slider:before { transform: translateX(14px); }
+
+        .filter-btn-active {
+            background-color: #1c1917 !important;
+            color: white !important;
+            border-color: #c5a059 !important;
+        }
+
+        /* Animation for table status changes */
+        .status-badge {
+            transition: all 0.3s ease;
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden">
+
+    <!-- Header -->
+    <header class="bg-stone-900 text-white p-4 shadow-xl flex justify-between items-center border-b-2 border-gold shrink-0">
+        <div class="flex items-center gap-4">
+            <div class="text-2xl font-bold tracking-widest uppercase">Saffron & Silk</div>
+            <nav class="ml-8 flex gap-4">
+                <button onclick="switchView('ordering')" id="nav-ordering" class="text-xs text-gold border border-gold px-3 py-1 rounded bg-stone-800">Order Entry</button>
+                <button onclick="switchView('kitchen')" id="nav-kitchen" class="text-xs text-stone-400 border border-stone-700 px-3 py-1 rounded hover:text-gold transition">Kitchen (KDS)</button>
+                <button onclick="switchView('manager')" id="nav-manager" class="text-xs text-stone-400 border border-stone-700 px-3 py-1 rounded hover:text-gold transition">Manager View</button>
+            </nav>
+        </div>
+        <div class="flex items-center gap-6">
+            <div id="tableSelectorContainer" class="flex items-center gap-2">
+                <label class="text-sm text-stone-400">Current Table:</label>
+                <select id="tableSelector" onchange="switchTable(this.value)" class="bg-stone-800 text-gold border border-gold rounded px-3 py-1 focus:outline-none">
+                    <option value="1">Table 01</option>
+                    <option value="2">Table 02</option>
+                    <option value="3">Table 03</option>
+                    <option value="4">Table 04</option>
+                    <option value="5">Table 05</option>
+                    <option value="6">Table 06</option>
+                    <option value="7">Table 07</option>
+                    <option value="8">Table 08</option>
+                </select>
+            </div>
+        </div>
+    </header>
+
+    <!-- CONTENT AREA -->
+    <div class="flex-1 relative overflow-hidden flex">
+        
+        <!-- VIEW 1: ORDER ENTRY -->
+        <main id="view-ordering" class="flex-1 flex overflow-hidden">
+            <section class="w-2/3 p-6 overflow-y-auto custom-scrollbar">
+                <div class="flex justify-between items-end mb-8 border-b border-stone-300 pb-4">
+                    <h2 class="text-3xl font-bold text-stone-800">Menu Selection</h2>
+                    <div class="flex gap-1" id="menuFilters">
+                        <button onclick="filterMenu('all')" data-cat="all" class="filter-btn filter-btn-active px-3 py-1 text-[10px] border border-stone-400 rounded-full hover:bg-stone-800 hover:text-white transition uppercase font-bold">All</button>
+                        <button onclick="filterMenu('starter')" data-cat="starter" class="filter-btn px-3 py-1 text-[10px] border border-stone-400 rounded-full hover:bg-stone-800 hover:text-white transition uppercase font-bold">Starters</button>
+                        <button onclick="filterMenu('mains')" data-cat="mains" class="filter-btn px-3 py-1 text-[10px] border border-stone-400 rounded-full hover:bg-stone-800 hover:text-white transition uppercase font-bold">Mains</button>
+                        <button onclick="filterMenu('beverage')" data-cat="beverage" class="filter-btn px-3 py-1 text-[10px] border border-stone-400 rounded-full hover:bg-stone-800 hover:text-white transition uppercase font-bold">Vintages</button>
+                        <button onclick="filterMenu('dessert')" data-cat="dessert" class="filter-btn px-3 py-1 text-[10px] border border-stone-400 rounded-full hover:bg-stone-800 hover:text-white transition uppercase font-bold">Desserts</button>
+                    </div>
+                </div>
+                <div id="menuGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            </section>
+
+            <aside class="w-1/3 bg-white border-l border-stone-200 flex flex-col shadow-2xl">
+                <div class="p-6 bg-stone-50 border-b border-stone-200">
+                    <h3 class="text-xl font-bold text-stone-800 uppercase tracking-tighter">Table <span id="activeTableNum">01</span> Bill</h3>
+                    <p class="text-[10px] text-stone-500 mt-1 uppercase tracking-widest">Fine Dining Order Summary</p>
+                </div>
+                <div id="cartItems" class="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar"></div>
+                <div class="p-6 bg-stone-900 text-white">
+                    <div class="space-y-1 mb-4 text-[11px] font-light">
+                        <div class="flex justify-between"><span>Subtotal</span><span id="subtotal">₹ 0</span></div>
+                        <div class="flex justify-between text-stone-400"><span>Service Charge (10%)</span><span id="serviceCharge">₹ 0</span></div>
+                        <div class="flex justify-between text-stone-400"><span>GST (18%)</span><span id="tax">₹ 0</span></div>
+                        <div class="flex justify-between text-stone-400"><span>Corkage Fee (Per Bev)</span><span id="corkage">₹ 0</span></div>
+                        
+                        <div class="flex justify-between items-center text-stone-300 pt-1">
+                            <div class="flex items-center gap-2">
+                                <span>Add Gratuity (5%)</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="gratuityToggle" onchange="toggleGratuity()">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            <span id="tip">₹ 0</span>
+                        </div>
+
+                        <div class="flex justify-between text-gold font-bold text-xl pt-3 mt-2 border-t border-stone-700">
+                            <span>Total Payable</span><span id="grandTotal">₹ 0</span>
+                        </div>
+                    </div>
+                    <button onclick="placeOrder()" class="w-full bg-gold hover:bg-yellow-600 text-stone-900 font-bold py-3 rounded transition-all transform active:scale-95 uppercase tracking-widest text-sm">
+                        Confirm & Next Table
+                    </button>
+                </div>
+            </aside>
+        </main>
+
+        <!-- VIEW 2: KITCHEN DISPLAY SYSTEM -->
+        <main id="view-kitchen" class="w-full p-8 overflow-y-auto custom-scrollbar view-hidden bg-[#f8f5f0]">
+            <div class="max-w-7xl mx-auto">
+                <h2 class="text-3xl font-bold text-stone-800 mb-6 border-b border-stone-300 pb-4">Kitchen Orders (KDS)</h2>
+                <div id="kitchenOrdersGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
+            </div>
+        </main>
+
+        <!-- VIEW 3: MANAGER DASHBOARD -->
+        <main id="view-manager" class="w-full p-8 overflow-y-auto custom-scrollbar view-hidden bg-[#f8f5f0]">
+            <div class="max-w-7xl mx-auto">
+                <div class="flex justify-between items-center mb-8 border-b border-stone-300 pb-4">
+                    <h2 class="text-3xl font-bold text-stone-800">Manager Dashboard</h2>
+                    <div class="bg-stone-900 text-white px-6 py-3 rounded shadow-lg border-l-4 border-gold">
+                        <p class="text-[10px] text-gold uppercase tracking-[0.2em] font-semibold mb-1">Gross Daily Revenue</p>
+                        <p id="totalRevenue" class="text-3xl font-bold">₹ 0</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" id="managerTableGrid"></div>
+            </div>
+        </main>
+    </div>
+
+    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 bg-stone-800 text-white px-6 py-3 rounded-full shadow-2xl opacity-0 transition-opacity pointer-events-none flex items-center gap-3 z-50">
+        <span class="text-gold">●</span> <span id="toastMsg"></span>
+    </div>
+
+    <script>
+        const menuItems = [
+            { id: 1, name: "Hara Bhara Kebab", category: "starter", price: 350, desc: "Spinach and green pea patties with mild spices." },
+            { id: 2, name: "Paneer Tikka", category: "starter", price: 420, desc: "Classic tandoor-grilled cottage cheese cubes." },
+            { id: 3, name: "Chicken Seekh", category: "starter", price: 480, desc: "Spiced minced chicken skewers grilled to perfection." },
+            { id: 11, name: "Tandoori Prawns", category: "starter", price: 750, desc: "Jumbo prawns marinated in yellow chili & curd." },
+            { id: 12, name: "Amritsari Machhi", category: "starter", price: 520, desc: "Gram flour battered fried river fish, carom seeds." },
+            
+            { id: 4, name: "Dal Makhani", category: "mains", price: 450, desc: "Creamy slow-cooked black lentils, a house favorite." },
+            { id: 5, name: "Butter Chicken", category: "mains", price: 580, desc: "Tender chicken in a rich, buttery tomato gravy." },
+            { id: 6, name: "Kadai Paneer", category: "mains", price: 480, desc: "Cottage cheese cooked with bell peppers and spices." },
+            { id: 7, name: "Mutton Rogan Josh", category: "mains", price: 650, desc: "Traditional Kashmiri lamb curry with aromatic spices." },
+            { id: 13, name: "Goan Prawn Curry", category: "mains", price: 690, desc: "Tangy coconut based curry with fresh catch." },
+            { id: 8, name: "Veg Dum Biryani", category: "mains", price: 450, desc: "Fragrant basmati rice cooked with seasonal vegetables." },
+
+            { id: 14, name: "Sula Shiraz (Glass)", category: "beverage", price: 450, desc: "Indian red wine with notes of pepper and mocha." },
+            { id: 15, name: "Chenin Blanc (Glass)", category: "beverage", price: 420, desc: "Crisp white wine, perfect with tandoori seafood." },
+            { id: 16, name: "Old Fashioned", category: "beverage", price: 550, desc: "Bourbon, bitters, and orange zest." },
+            { id: 17, name: "Glenfiddich 12yr", category: "beverage", price: 850, desc: "Single malt scotch, 30ml serving." },
+            { id: 18, name: "Classic Gin Tonic", category: "beverage", price: 480, desc: "Premium Indian gin, cucumber, elderflower tonic." },
+
+            { id: 9, name: "Gulab Jamun", category: "dessert", price: 180, desc: "Soft khoya balls soaked in saffron sugar syrup." },
+            { id: 10, name: "Mango Kulfi", category: "dessert", price: 220, desc: "Traditional Indian frozen dessert with alphonso mango." },
+            { id: 19, name: "Kesari Phirni", category: "dessert", price: 250, desc: "Creamy rice pudding flavored with saffron and cardamom." },
+            { id: 20, name: "Shahi Tukda", category: "dessert", price: 280, desc: "Deep-fried bread soaked in sweet milk syrup and nuts." },
+            { id: 21, name: "Rose & Pistachio Baklava", category: "dessert", price: 340, desc: "Flaky filo layers with crushed nuts and floral honey syrup." }
+        ];
+
+        let tableOrders = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [], 8: [] };
+        let tableGratuitySettings = { 1: false, 2: false, 3: false, 4: false, 5: false, 6: false, 7: false, 8: false };
+        let kitchenOrders = [];
+        let settledRevenueHistory = 0; // Tracks revenue from tables that have been settled and closed
+        let currentTableId = 1;
+        const CORKAGE_PER_BEV = 150; 
+
+        function init() {
+            renderMenu('all');
+            updateCartDisplay();
+        }
+
+        function switchView(view) {
+            document.getElementById('view-ordering').classList.add('view-hidden');
+            document.getElementById('view-kitchen').classList.add('view-hidden');
+            document.getElementById('view-manager').classList.add('view-hidden');
+            document.getElementById('tableSelectorContainer').classList.toggle('invisible', view !== 'ordering');
+            
+            ['ordering', 'kitchen', 'manager'].forEach(v => {
+                const btn = document.getElementById(`nav-${v}`);
+                btn.className = v === view ? "text-xs text-gold border border-gold px-3 py-1 rounded bg-stone-800" : "text-xs text-stone-400 border border-stone-700 px-3 py-1 rounded hover:text-gold transition";
+            });
+
+            document.getElementById(`view-${view}`).classList.remove('view-hidden');
+            if (view === 'ordering') updateCartDisplay();
+            else if (view === 'kitchen') renderKitchen();
+            else if (view === 'manager') renderManager();
+        }
+
+        function renderMenu(filter) {
+            const buttons = document.querySelectorAll('.filter-btn');
+            buttons.forEach(btn => {
+                if (btn.getAttribute('data-cat') === filter) {
+                    btn.classList.add('filter-btn-active');
+                } else {
+                    btn.classList.remove('filter-btn-active');
+                }
+            });
+
+            const grid = document.getElementById('menuGrid');
+            grid.innerHTML = '';
+            const filtered = filter === 'all' ? menuItems : menuItems.filter(item => item.category === filter);
+            filtered.forEach(item => {
+                grid.innerHTML += `
+                    <div class="bg-white p-4 rounded-lg border border-stone-200 hover:border-gold transition-all group cursor-pointer shadow-sm" onclick="addToCart(${item.id})">
+                        <div class="flex justify-between items-start mb-1">
+                            <h4 class="font-bold text-sm text-stone-800 group-hover:text-gold transition-colors">${item.name}</h4>
+                            <span class="text-stone-900 font-semibold text-sm">₹${item.price}</span>
+                        </div>
+                        <p class="text-[10px] text-stone-500 leading-tight mb-3">${item.desc}</p>
+                        <div class="text-[8px] font-bold text-gold uppercase tracking-widest">+ Add</div>
+                    </div>`;
+            });
+        }
+
+        function filterMenu(cat) { renderMenu(cat); }
+
+        function switchTable(id) {
+            currentTableId = parseInt(id);
+            document.getElementById('activeTableNum').innerText = id.padStart(2, '0');
+            document.getElementById('tableSelector').value = id;
+            document.getElementById('gratuityToggle').checked = tableGratuitySettings[currentTableId];
+            updateCartDisplay();
+        }
+
+        function toggleGratuity() {
+            tableGratuitySettings[currentTableId] = document.getElementById('gratuityToggle').checked;
+            updateCartDisplay();
+        }
+
+        function addToCart(itemId) {
+            const item = menuItems.find(i => i.id === itemId);
+            const tableCart = tableOrders[currentTableId];
+            const existing = tableCart.find(i => i.id === itemId && !i.sentToKitchen);
+            if (existing) existing.quantity++;
+            else tableCart.push({ ...item, quantity: 1, sentToKitchen: false });
+            updateCartDisplay();
+        }
+
+        function updateQuantity(itemId, delta) {
+            const tableCart = tableOrders[currentTableId];
+            const index = tableCart.findIndex(i => i.id === itemId && !i.sentToKitchen);
+            if (index !== -1) {
+                tableCart[index].quantity += delta;
+                if (tableCart[index].quantity <= 0) tableCart.splice(index, 1);
+            }
+            updateCartDisplay();
+        }
+
+        function updateCartDisplay() {
+            const cartContainer = document.getElementById('cartItems');
+            const tableCart = tableOrders[currentTableId];
+            
+            if (tableCart.length === 0) {
+                cartContainer.innerHTML = `<div class="text-center text-stone-400 mt-10 text-xs italic uppercase tracking-widest">Awaiting Guest Selection</div>`;
+            } else {
+                cartContainer.innerHTML = tableCart.map(item => `
+                    <div class="flex justify-between items-center ${item.sentToKitchen ? 'opacity-50 grayscale' : 'bg-stone-50'} p-2 rounded border border-stone-100">
+                        <div>
+                            <div class="font-bold text-stone-800 text-[11px] uppercase">${item.name} ${item.sentToKitchen ? '✓' : ''}</div>
+                            <div class="text-[10px] text-stone-500">₹${item.price}</div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            ${!item.sentToKitchen ? `
+                                <button onclick="updateQuantity(${item.id}, -1)" class="w-4 h-4 flex items-center justify-center border border-stone-300 rounded text-[10px]">-</button>
+                                <span class="text-xs font-bold">${item.quantity}</span>
+                                <button onclick="updateQuantity(${item.id}, 1)" class="w-4 h-4 flex items-center justify-center border border-stone-300 rounded text-[10px]">+</button>
+                            ` : `<span class="text-xs font-bold">${item.quantity}</span>`}
+                        </div>
+                    </div>`).join('');
+            }
+
+            const billing = calculateBill(currentTableId);
+            document.getElementById('subtotal').innerText = `₹ ${billing.subtotal}`;
+            document.getElementById('serviceCharge').innerText = `₹ ${billing.serviceCharge}`;
+            document.getElementById('tax').innerText = `₹ ${billing.tax}`;
+            document.getElementById('corkage').innerText = `₹ ${billing.corkage}`;
+            document.getElementById('tip').innerText = `₹ ${billing.tip}`;
+            document.getElementById('grandTotal').innerText = `₹ ${billing.total}`;
+        }
+
+        function calculateBill(tableId) {
+            const cart = tableOrders[tableId];
+            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            
+            if (subtotal === 0) return { subtotal: 0, serviceCharge: 0, tax: 0, corkage: 0, tip: 0, total: 0 };
+
+            const beverageCount = cart.reduce((count, item) => {
+                return item.category === 'beverage' ? count + item.quantity : count;
+            }, 0);
+            const corkage = beverageCount * CORKAGE_PER_BEV;
+
+            const serviceCharge = Math.round(subtotal * 0.10);
+            const tax = Math.round((subtotal + serviceCharge) * 0.18);
+            const tip = tableGratuitySettings[tableId] ? Math.round(subtotal * 0.05) : 0;
+            const total = subtotal + serviceCharge + tax + corkage + tip;
+
+            return { subtotal, serviceCharge, tax, corkage, tip, total };
+        }
+
+        function placeOrder() {
+            const itemsToOrder = tableOrders[currentTableId].filter(i => !i.sentToKitchen);
+            if (itemsToOrder.length === 0) {
+                showToast("No new items to send to kitchen");
+                return;
+            }
+
+            const ticket = {
+                id: Date.now(),
+                table: currentTableId,
+                items: itemsToOrder.map(i => ({ name: i.name, quantity: i.quantity })),
+                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            };
+            kitchenOrders.push(ticket);
+
+            tableOrders[currentTableId].forEach(i => i.sentToKitchen = true);
+            showToast(`Order sent for Table ${currentTableId}`);
+            
+            let nextTable = currentTableId < 8 ? currentTableId + 1 : 1;
+            switchTable(nextTable.toString());
+        }
+
+        function renderKitchen() {
+            const grid = document.getElementById('kitchenOrdersGrid');
+            grid.innerHTML = kitchenOrders.length === 0 ? '<p class="col-span-full text-stone-400 text-center py-10 italic">No pending orders at the moment.</p>' : '';
+            
+            kitchenOrders.forEach((order, index) => {
+                grid.innerHTML += `
+                    <div class="bg-white border-l-4 border-gold p-5 shadow-lg rounded-lg">
+                        <div class="flex justify-between items-start border-b border-stone-100 pb-3 mb-3">
+                            <div>
+                                <h4 class="font-bold text-xl text-stone-800">Table ${order.table}</h4>
+                                <p class="text-[10px] text-stone-500 uppercase tracking-widest">${order.time}</p>
+                            </div>
+                        </div>
+                        <ul class="space-y-2 mb-6">
+                            ${order.items.map(i => `<li class="text-sm flex justify-between"><span>${i.name}</span> <span class="font-bold text-gold">x${i.quantity}</span></li>`).join('')}
+                        </ul>
+                        <button onclick="clearKitchenOrder(${index})" class="w-full text-xs bg-stone-900 text-white py-2 rounded hover:bg-gold hover:text-stone-900 uppercase font-bold tracking-widest transition-all">Mark as Ready</button>
+                    </div>`;
+            });
+        }
+
+        function clearKitchenOrder(index) {
+            kitchenOrders.splice(index, 1);
+            renderKitchen();
+        }
+
+        function renderManager() {
+            const grid = document.getElementById('managerTableGrid');
+            grid.innerHTML = '';
+            let currentActiveRev = 0;
+
+            for (let i = 1; i <= 8; i++) {
+                const billing = calculateBill(i);
+                currentActiveRev += billing.total;
+
+                grid.innerHTML += `
+                    <div class="bg-white p-5 rounded-lg border ${billing.total > 0 ? 'border-gold shadow-md' : 'border-stone-200 opacity-60'}">
+                        <div class="flex justify-between items-center border-b border-stone-100 pb-2 mb-4">
+                            <h4 class="font-bold text-lg text-stone-800">Table ${i.toString().padStart(2, '0')}</h4>
+                            <span class="status-badge ${billing.total > 0 ? 'bg-green-100 text-green-700' : 'bg-stone-100 text-stone-400'} text-[10px] px-2 py-0.5 rounded font-bold uppercase">${billing.total > 0 ? 'Occupied' : 'Vacant'}</span>
+                        </div>
+                        <div class="space-y-1 mb-6">
+                            <div class="flex justify-between text-[10px] text-stone-500">
+                                <span>Subtotal:</span> <span>₹${billing.subtotal}</span>
+                            </div>
+                            <div class="flex justify-between text-[10px] text-stone-500">
+                                <span>Corkage:</span> <span>₹${billing.corkage}</span>
+                            </div>
+                            <div class="flex justify-between text-[10px] text-stone-500 italic">
+                                <span>Gratuity:</span> <span>₹${billing.tip}</span>
+                            </div>
+                            <div class="flex justify-between text-[10px] text-stone-500">
+                                <span>Taxes (GST):</span> <span>₹${billing.tax}</span>
+                            </div>
+                            <div class="flex justify-between font-bold text-lg text-stone-900 pt-2 mt-2 border-t border-stone-50">
+                                <span>Net Due:</span> <span>₹${billing.total.toLocaleString('en-IN')}</span>
+                            </div>
+                        </div>
+                        ${billing.total > 0 ? `
+                            <button onclick="settleTable(${i})" class="w-full text-[11px] bg-gold text-stone-900 py-2 rounded hover:bg-yellow-600 transition-all uppercase font-bold tracking-widest">Settle & Close</button>
+                        ` : ''}
+                    </div>`;
+            }
+            
+            // Gross Revenue = Sum of all closed tables + current active tables
+            const totalGross = settledRevenueHistory + currentActiveRev;
+            document.getElementById('totalRevenue').innerText = `₹ ${totalGross.toLocaleString('en-IN')}`;
+        }
+
+        window.settleTable = function(tableId) {
+            const billing = calculateBill(tableId);
+            
+            // Record the revenue from this table before clearing it
+            settledRevenueHistory += billing.total;
+
+            // Clear the table data
+            tableOrders[tableId] = [];
+            tableGratuitySettings[tableId] = false; 
+
+            // If we are currently viewing this table in Order Entry, update the UI
+            if (tableId === currentTableId) {
+                document.getElementById('gratuityToggle').checked = false;
+                updateCartDisplay();
+            }
+
+            renderManager();
+            showToast(`Table ${tableId} bill settled. Payment recorded.`);
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMsg').innerText = msg;
+            toast.style.opacity = '1';
+            setTimeout(() => toast.style.opacity = '0', 2500);
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>

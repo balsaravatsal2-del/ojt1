@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gourmet Central Pro | Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        
+        :root {
+            --primary: #38bdf8;
+            --secondary: #818cf8;
+            --bg-dark: #020617;
+            --card-bg: rgba(15, 23, 42, 0.6);
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-dark);
+            color: #f8fafc;
+            overflow-x: hidden;
+        }
+
+        .glass-panel {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .token-glow {
+            text-shadow: 0 0 30px rgba(56, 189, 248, 0.4);
+        }
+
+        .status-badge {
+            padding: 2px 8px;
+            border-radius: 9999px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .view-enter {
+            animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .scroll-hide::-webkit-scrollbar { display: none; }
+        .scroll-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .table-btn {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .table-btn:active { transform: scale(0.95); }
+
+        /* Custom Checkbox Style for Menu */
+        .menu-item-card {
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .menu-item-card.selected {
+            background: rgba(56, 189, 248, 0.1);
+            border-color: var(--primary);
+        }
+
+        #loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: var(--bg-dark);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.6s ease;
+        }
+    </style>
+</head>
+<body class="min-h-screen selection:bg-sky-500/30">
+
+    <div id="loading-overlay">
+        <div class="relative w-20 h-20">
+            <div class="absolute inset-0 border-4 border-sky-500/20 rounded-full"></div>
+            <div class="absolute inset-0 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+        <p class="mt-6 text-sky-400 font-medium tracking-widest animate-pulse">ESTABLISHING UPLINK</p>
+    </div>
+
+    <!-- Top Navigation -->
+    <nav class="sticky top-0 z-50 glass-panel border-b border-white/5 px-6 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-4">
+            <div class="w-10 h-10 bg-gradient-to-br from-sky-400 to-indigo-500 rounded-xl flex items-center justify-center shadow-lg shadow-sky-500/20">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>
+            </div>
+            <div>
+                <h1 class="font-extrabold text-lg tracking-tight leading-none">GOURMET<span class="text-sky-400">CENTRAL</span></h1>
+                <p class="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em]">Management Suite v2.0</p>
+            </div>
+        </div>
+
+        <div class="hidden md:flex gap-1 bg-white/5 p-1 rounded-2xl border border-white/10">
+            <button onclick="switchView('customer')" id="btn-customer" class="nav-btn px-5 py-2 rounded-xl text-sm font-bold transition-all">Display</button>
+            <button onclick="switchView('tables')" id="btn-tables" class="nav-btn px-5 py-2 rounded-xl text-sm font-bold transition-all">Tables</button>
+            <button onclick="switchView('kitchen')" id="btn-kitchen" class="nav-btn px-5 py-2 rounded-xl text-sm font-bold transition-all">Kitchen</button>
+        </div>
+
+        <div class="flex items-center gap-4">
+            <div id="connection-status" class="flex items-center gap-2 px-3 py-1.5 bg-green-500/10 border border-green-500/20 rounded-full">
+                <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span class="text-[10px] font-bold text-green-500 uppercase">Live</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Mobile Nav Bar (Fixed Bottom) -->
+    <div class="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 glass-panel px-4 py-2 rounded-3xl flex gap-2 border border-white/10 shadow-2xl">
+        <button onclick="switchView('customer')" class="p-3 text-slate-400"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="15" x="2" y="3" rx="2"/><path d="M7 21h10"/><path d="M12 18v3"/></svg></button>
+        <button onclick="switchView('tables')" class="p-3 text-slate-400"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h18v18H3z"/><path d="M3 9h18"/><path d="M9 3v18"/></svg></button>
+        <button onclick="switchView('kitchen')" class="p-3 text-slate-400"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg></button>
+    </div>
+
+    <main class="max-w-7xl mx-auto px-6 py-8 pb-32">
+        
+        <!-- VIEW: CUSTOMER DISPLAY -->
+        <div id="view-customer" class="view-transition hidden">
+            <div class="grid lg:grid-cols-12 gap-8">
+                <div class="lg:col-span-8 space-y-6">
+                    <div class="glass-panel rounded-[2.5rem] p-12 text-center relative overflow-hidden group">
+                        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-sky-500 to-transparent"></div>
+                        <div class="inline-flex items-center gap-2 px-4 py-2 bg-sky-500/10 rounded-full mb-8">
+                            <span class="w-2 h-2 bg-sky-500 rounded-full animate-ping"></span>
+                            <span class="text-xs font-bold text-sky-400 uppercase tracking-widest">Now Serving</span>
+                        </div>
+                        <div id="serving-token" class="text-[12rem] font-black leading-none tracking-tighter token-glow bg-gradient-to-b from-white to-slate-500 bg-clip-text text-transparent">---</div>
+                        <p class="text-2xl text-slate-400 font-medium mt-4">Please approach the main counter</p>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-6">
+                        <div class="glass-panel p-6 rounded-3xl">
+                            <p class="text-[10px] font-bold text-slate-500 uppercase mb-2">Wait Time</p>
+                            <div class="flex items-baseline gap-2">
+                                <span class="text-3xl font-bold">~14</span>
+                                <span class="text-slate-500 text-sm">MINS</span>
+                            </div>
+                        </div>
+                        <div class="glass-panel p-6 rounded-3xl">
+                            <p class="text-[10px] font-bold text-slate-500 uppercase mb-2">Orders Pending</p>
+                            <span id="pending-count" class="text-3xl font-bold">0</span>
+                        </div>
+                        <div class="glass-panel p-6 rounded-3xl">
+                            <p class="text-[10px] font-bold text-slate-500 uppercase mb-2">Staff Online</p>
+                            <span class="text-3xl font-bold text-green-400">Active</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-4 space-y-6">
+                    <h3 class="text-sm font-bold uppercase tracking-widest text-slate-500 flex items-center gap-3">
+                        <div class="w-1.5 h-1.5 bg-sky-500 rounded-full"></div> Preparation Queue
+                    </h3>
+                    <div id="customer-queue" class="space-y-3 overflow-y-auto max-h-[70vh] pr-2 scroll-hide">
+                        <!-- Tokens injected here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: TABLE MANAGEMENT -->
+        <div id="view-tables" class="view-transition hidden space-y-8">
+            <div class="flex justify-between items-end">
+                <div>
+                    <h2 class="text-4xl font-black italic tracking-tighter">FLOOR<span class="text-sky-400">PLAN</span></h2>
+                    <p class="text-slate-500 font-medium">Real-time occupancy and turnover management</p>
+                </div>
+                <div class="flex gap-4">
+                    <div class="flex items-center gap-2 px-4 py-2 bg-slate-800/50 rounded-xl border border-white/5">
+                        <div class="w-3 h-3 bg-green-500 rounded-md shadow-lg shadow-green-500/20"></div>
+                        <span class="text-[10px] font-bold uppercase text-slate-400">Available</span>
+                    </div>
+                    <div class="flex items-center gap-2 px-4 py-2 bg-slate-800/50 rounded-xl border border-white/5">
+                        <div class="w-3 h-3 bg-red-500 rounded-md shadow-lg shadow-red-500/20"></div>
+                        <span class="text-[10px] font-bold uppercase text-slate-400">Occupied</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-panel p-10 rounded-[3rem]">
+                <div id="tables-grid" class="grid grid-cols-2 md:grid-cols-5 gap-8">
+                    <!-- Tables injected here -->
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div class="glass-panel p-6 rounded-3xl bg-sky-500/5 border-sky-500/20">
+                    <p class="text-[10px] font-bold text-sky-400 uppercase mb-2">Occupancy Rate</p>
+                    <span id="occupancy-percent" class="text-4xl font-black">0%</span>
+                </div>
+                <div class="glass-panel p-6 rounded-3xl">
+                    <p class="text-[10px] font-bold text-slate-500 uppercase mb-2">Total Tables</p>
+                    <span class="text-4xl font-black text-slate-300">10</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: KITCHEN TERMINAL -->
+        <div id="view-kitchen" class="view-transition hidden">
+            <div class="grid lg:grid-cols-12 gap-8">
+                <div class="lg:col-span-4 space-y-6">
+                    <div class="glass-panel p-8 rounded-[2.5rem] border-sky-500/30">
+                        <h2 class="text-xl font-bold mb-6 flex items-center justify-between">
+                            Active Prep
+                            <span class="status-badge bg-sky-500 text-white">Priority</span>
+                        </h2>
+                        <div class="text-center py-8">
+                            <span class="text-slate-500 text-xs font-bold uppercase tracking-widest block mb-2">Current Token</span>
+                            <div id="kitchen-current-token" class="text-8xl font-black mb-8 text-white">---</div>
+                            <div id="active-items-list" class="flex flex-wrap justify-center gap-2 mb-8">
+                                <!-- Active items -->
+                            </div>
+                            <button onclick="markOrderReady()" class="w-full bg-sky-600 hover:bg-sky-500 text-white py-5 rounded-2xl font-bold text-lg shadow-xl shadow-sky-900/40 transition-all active:scale-95 flex items-center justify-center gap-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                                Order Ready
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="glass-panel p-8 rounded-[2rem]">
+                        <h3 class="font-bold mb-4 uppercase text-xs tracking-widest text-slate-500">Service Performance</h3>
+                        <div class="space-y-4">
+                            <div class="flex justify-between text-sm">
+                                <span class="text-slate-400">Avg. Prep Time</span>
+                                <span class="font-bold">12.4m</span>
+                            </div>
+                            <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                                <div class="bg-sky-500 h-full w-[70%]"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-8 space-y-6">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-sm font-bold uppercase tracking-widest text-slate-500">Incoming Orders</h3>
+                        <button onclick="openOrderModal()" class="bg-white/10 hover:bg-white/20 text-white px-5 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            New Manual Entry
+                        </button>
+                    </div>
+
+                    <div id="kitchen-queue" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Kitchen items injected here -->
+                    </div>
+
+                    <div id="kitchen-empty" class="hidden text-center py-24 glass-panel rounded-[2rem] border-dashed">
+                        <p class="text-slate-500 font-medium">Kitchen clear. No pending tickets.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modal: New Order -->
+    <div id="modal-order" class="fixed inset-0 z-[100] flex items-center justify-center p-6 hidden">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-md" onclick="closeOrderModal()"></div>
+        <div class="glass-panel w-full max-w-xl rounded-[2.5rem] relative overflow-hidden p-10 view-enter">
+            <h2 class="text-2xl font-bold mb-8">Create New Order</h2>
+            
+            <div class="space-y-6">
+                <div>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase block mb-3">Select Menu Items</label>
+                    <div id="menu-selection" class="grid grid-cols-2 gap-3">
+                        <!-- Menu items injected here -->
+                    </div>
+                </div>
+                
+                <div class="flex gap-4 pt-6">
+                    <button onclick="closeOrderModal()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-white py-4 rounded-2xl font-bold">Cancel</button>
+                    <button onclick="submitOrder()" class="flex-1 bg-sky-600 hover:bg-sky-500 text-white py-4 rounded-2xl font-bold shadow-lg shadow-sky-900/40">Push Ticket</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 glass-panel border-sky-500/50 px-8 py-4 rounded-2xl font-bold text-sky-400 opacity-0 pointer-events-none transition-all duration-500 translate-y-8 z-[200]">
+        <!-- Toast message -->
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, onSnapshot, setDoc, updateDoc, getDoc, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // CONFIG & STATE (Safely checking for global variables)
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'gourmet-central-pro';
+        
+        // Only initialize if config is available
+        const app = firebaseConfig ? initializeApp(firebaseConfig) : null;
+        const auth = app ? getAuth(app) : null;
+        const db = app ? getFirestore(app) : null;
+
+        const MENU_ITEMS = [
+            { id: 'b1', name: 'Signature Burger', price: 14 },
+            { id: 'p1', name: 'Truffle Pasta', price: 18 },
+            { id: 's1', name: 'Caesar Salad', price: 12 },
+            { id: 'f1', name: 'Loaded Fries', price: 8 },
+            { id: 'd1', name: 'Berry Smoothie', price: 6 },
+            { id: 'k1', name: 'Kids Meal', price: 9 }
+        ];
+
+        let state = {
+            currentServing: 101,
+            queue: [
+                { token: 102, items: ['Signature Burger', 'Berry Smoothie'], ts: Date.now() },
+                { token: 103, items: ['Truffle Pasta'], ts: Date.now() + 5000 }
+            ],
+            tables: Array(10).fill(false),
+            history: []
+        };
+
+        let user = null;
+        let selectedItems = [];
+        let audioCtx = null;
+
+        // AUTH & SYNC
+        const init = async () => {
+            if (!auth) {
+                console.error("Firebase Auth not initialized. Check configuration.");
+                return;
+            }
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                await signInWithCustomToken(auth, __initial_auth_token);
+            } else {
+                await signInAnonymously(auth);
+            }
+        };
+
+        if (auth) {
+            onAuthStateChanged(auth, (u) => {
+                user = u;
+                if (user) setupRealtime();
+            });
+        }
+
+        const stateRef = db ? doc(db, 'artifacts', appId, 'public', 'data', 'serviceState', 'primary') : null;
+
+        function setupRealtime() {
+            if (!stateRef) return;
+            onSnapshot(stateRef, (snap) => {
+                if (snap.exists()) {
+                    const data = snap.data();
+                    const oldServing = state.currentServing;
+                    state = data;
+                    
+                    render();
+                    
+                    if (oldServing !== 0 && oldServing !== state.currentServing) {
+                        notifyReady(state.currentServing);
+                    }
+                } else {
+                    // Seed initial data
+                    setDoc(stateRef, state);
+                }
+                
+                const loader = document.getElementById('loading-overlay');
+                if (loader) {
+                    loader.style.opacity = '0';
+                    setTimeout(() => loader.style.display = 'none', 600);
+                }
+            }, (err) => console.error("Firestore Error:", err));
+        }
+
+        // VIEW LOGIC
+        window.switchView = (viewId) => {
+            document.querySelectorAll('.view-transition').forEach(v => v.classList.add('hidden'));
+            document.querySelectorAll('.nav-btn').forEach(b => {
+                b.classList.remove('bg-sky-600', 'text-white');
+                b.classList.add('text-slate-400', 'hover:bg-white/10');
+            });
+
+            const targetView = document.getElementById(`view-${viewId}`);
+            if (targetView) targetView.classList.remove('hidden');
+            
+            const btn = document.getElementById(`btn-${viewId}`);
+            if (btn) {
+                btn.classList.remove('text-slate-400', 'hover:bg-white/10');
+                btn.classList.add('bg-sky-600', 'text-white');
+            }
+        };
+
+        // RENDER FUNCTIONS
+        function render() {
+            // Customer View
+            const servingEl = document.getElementById('serving-token');
+            if (servingEl) servingEl.innerText = state.currentServing.toString().padStart(3, '0');
+            
+            const pendingCountEl = document.getElementById('pending-count');
+            if (pendingCountEl) pendingCountEl.innerText = state.queue.length;
+            
+            const customerQueue = document.getElementById('customer-queue');
+            if (customerQueue) {
+                customerQueue.innerHTML = '';
+                state.queue.forEach((order, i) => {
+                    const el = document.createElement('div');
+                    el.className = 'glass-panel p-5 rounded-2xl flex justify-between items-center border-l-4 border-sky-500 animate-slide-in';
+                    el.innerHTML = `
+                        <div>
+                            <span class="text-xs font-bold text-slate-500 uppercase tracking-tighter block">Ticket</span>
+                            <span class="text-xl font-bold">#${order.token}</span>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-[10px] font-bold text-sky-400 uppercase block">Status</span>
+                            <span class="text-sm font-medium text-slate-300">Preparing...</span>
+                        </div>
+                    `;
+                    customerQueue.appendChild(el);
+                });
+            }
+
+            // Tables View
+            const tablesGrid = document.getElementById('tables-grid');
+            if (tablesGrid) {
+                tablesGrid.innerHTML = '';
+                let occupied = 0;
+                state.tables.forEach((isOcc, i) => {
+                    if (isOcc) occupied++;
+                    const btn = document.createElement('button');
+                    btn.className = `table-btn group aspect-square rounded-3xl p-6 flex flex-col items-center justify-center gap-2 border-2 transition-all ${isOcc ? 'bg-red-500/10 border-red-500/50 text-red-400 shadow-[0_0_20px_rgba(239,68,68,0.1)]' : 'bg-slate-800/50 border-white/5 text-slate-500 hover:border-green-500/30'}`;
+                    btn.onclick = () => toggleTable(i);
+                    btn.innerHTML = `
+                        <span class="text-[10px] font-bold uppercase tracking-widest opacity-60">Table</span>
+                        <span class="text-4xl font-black italic">${i + 1}</span>
+                        <span class="status-badge ${isOcc ? 'bg-red-500' : 'bg-green-500'} text-white">${isOcc ? 'Occupied' : 'Free'}</span>
+                    `;
+                    tablesGrid.appendChild(btn);
+                });
+                const occupancyPercentEl = document.getElementById('occupancy-percent');
+                if (occupancyPercentEl) occupancyPercentEl.innerText = `${Math.round((occupied / 10) * 100)}%`;
+            }
+
+            // Kitchen View
+            const kitchenTokenEl = document.getElementById('kitchen-current-token');
+            if (kitchenTokenEl) kitchenTokenEl.innerText = state.currentServing.toString().padStart(3, '0');
+            
+            const kitchenQueue = document.getElementById('kitchen-queue');
+            if (kitchenQueue) {
+                kitchenQueue.innerHTML = '';
+                const emptyState = document.getElementById('kitchen-empty');
+                if (state.queue.length === 0) {
+                    if (emptyState) emptyState.classList.remove('hidden');
+                } else {
+                    if (emptyState) emptyState.classList.add('hidden');
+                    state.queue.forEach((order, i) => {
+                        const div = document.createElement('div');
+                        div.className = 'glass-panel p-6 rounded-3xl border-white/5';
+                        div.innerHTML = `
+                            <div class="flex justify-between items-start mb-4">
+                                <span class="text-2xl font-black italic">#${order.token}</span>
+                                <span class="text-[10px] font-bold text-slate-500">${new Date(order.ts).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                            </div>
+                            <div class="space-y-1 mb-4">
+                                ${order.items.map(item => `<div class="text-sm font-medium text-slate-300 flex items-center gap-2">
+                                    <div class="w-1.5 h-1.5 bg-slate-600 rounded-full"></div> ${item}
+                                </div>`).join('')}
+                            </div>
+                            <div class="h-1 w-full bg-slate-800 rounded-full overflow-hidden">
+                                <div class="bg-sky-500/50 h-full w-1/2"></div>
+                            </div>
+                        `;
+                        kitchenQueue.appendChild(div);
+                    });
+                }
+            }
+
+            // Active items in kitchen
+            const activeItems = document.getElementById('active-items-list');
+            if (activeItems) {
+                activeItems.innerHTML = '';
+                if (state.queue.length > 0) {
+                    state.queue[0].items.forEach(item => {
+                        const span = document.createElement('span');
+                        span.className = 'px-3 py-1 bg-white/5 rounded-lg text-xs font-bold text-slate-400 border border-white/10';
+                        span.innerText = item;
+                        activeItems.appendChild(span);
+                    });
+                }
+            }
+        }
+
+        // ACTIONS
+        window.toggleTable = async (idx) => {
+            if (!user || !stateRef) return;
+            const newTables = [...state.tables];
+            newTables[idx] = !newTables[idx];
+            await updateDoc(stateRef, { tables: newTables });
+        };
+
+        window.markOrderReady = async () => {
+            if (!user || state.queue.length === 0 || !stateRef) return;
+            const next = state.queue[0];
+            const newQueue = state.queue.slice(1);
+            await updateDoc(stateRef, {
+                currentServing: next.token,
+                queue: newQueue
+            });
+        };
+
+        window.openOrderModal = () => {
+            selectedItems = [];
+            const modal = document.getElementById('modal-order');
+            if (modal) modal.classList.remove('hidden');
+            
+            const menu = document.getElementById('menu-selection');
+            if (menu) {
+                menu.innerHTML = '';
+                MENU_ITEMS.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'menu-item-card glass-panel p-4 rounded-2xl border-white/5 flex justify-between items-center';
+                    div.id = `menu-${item.id}`;
+                    div.onclick = () => toggleMenuItem(item.id, item.name);
+                    div.innerHTML = `
+                        <span class="font-bold text-sm">${item.name}</span>
+                        <span class="text-xs text-sky-400 font-bold">$${item.price}</span>
+                    `;
+                    menu.appendChild(div);
+                });
+            }
+        };
+
+        window.toggleMenuItem = (id, name) => {
+            const idx = selectedItems.indexOf(name);
+            const el = document.getElementById(`menu-${id}`);
+            if (idx > -1) {
+                selectedItems.splice(idx, 1);
+                if (el) el.classList.remove('selected');
+            } else {
+                selectedItems.push(name);
+                if (el) el.classList.add('selected');
+            }
+        };
+
+        window.closeOrderModal = () => {
+            const modal = document.getElementById('modal-order');
+            if (modal) modal.classList.add('hidden');
+        };
+
+        window.submitOrder = async () => {
+            if (!user || selectedItems.length === 0 || !stateRef) return;
+            
+            const lastToken = state.queue.length > 0 
+                ? state.queue[state.queue.length - 1].token 
+                : state.currentServing;
+            
+            const newOrder = {
+                token: lastToken + 1,
+                items: selectedItems,
+                ts: Date.now()
+            };
+
+            await updateDoc(stateRef, {
+                queue: [...state.queue, newOrder]
+            });
+            
+            showToast(`Ticket #${newOrder.token} pushed to kitchen!`);
+            closeOrderModal();
+        };
+
+        // UTILITIES
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            if (t) {
+                t.innerText = msg;
+                t.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-8');
+                setTimeout(() => {
+                    t.classList.add('opacity-0', 'pointer-events-none', 'translate-y-8');
+                }, 3000);
+            }
+        }
+
+        async function notifyReady(token) {
+            showToast(`Order #${token} is READY!`);
+            playDing();
+        }
+
+        async function playDing() {
+            try {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') await audioCtx.resume();
+                
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.6);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.6);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.6);
+            } catch(e) {}
+        }
+
+        // START
+        if (app) {
+            init();
+        } else {
+            // If Firebase can't init, hide loading anyway so UI is visible
+            setTimeout(() => {
+                const loader = document.getElementById('loading-overlay');
+                if (loader) loader.style.display = 'none';
+                showToast("System offline: Configuration missing.");
+                render(); // Render local state
+            }, 1000);
+        }
+        switchView('customer');
+    </script>
+</body>
+</html>

@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gourmet Central Pro | Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        
+        :root {
+            --primary: #f97316;
+            --secondary: #fbbf24;
+            --bg-light: #fffcf9;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-main);
+            overflow-x: hidden;
+        }
+
+        .bistro-card {
+            background: var(--card-bg);
+            border: 1px solid rgba(249, 115, 22, 0.1);
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 25px -5px rgba(249, 115, 22, 0.08);
+        }
+
+        .token-hero {
+            background: linear-gradient(135deg, #f97316 0%, #fbbf24 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            filter: drop-shadow(0 4px 6px rgba(249, 115, 22, 0.2));
+        }
+
+        /* --- BookMyShow Inspired Table Graphics --- */
+        .table-tile {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            background: white;
+            border-radius: 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .table-tile:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            border-color: var(--primary);
+        }
+
+        /* Bottom indicator bar */
+        .status-indicator {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 6px;
+            transition: background-color 0.3s ease;
+        }
+
+        .available {
+            background-color: #f0fdf4;
+            border-color: #dcfce7;
+        }
+        .available .status-indicator { background-color: #10b981; }
+        .available .table-label { color: #065f46; }
+
+        .occupied {
+            background-color: #fff1f2;
+            border-color: #ffe4e6;
+        }
+        .occupied .status-indicator { background-color: #f43f5e; }
+        .occupied .table-label { color: #9f1239; }
+
+        .table-number {
+            font-size: 1.75rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .table-label {
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 4px;
+        }
+
+        /* General UI components */
+        .nav-btn-active {
+            background-color: var(--primary);
+            color: white;
+            box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+        }
+
+        .view-transition {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        #loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: white;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(to right, #f97316, #fb923c);
+            transition: all 0.2s;
+        }
+        .btn-primary:hover {
+            filter: brightness(1.1);
+            transform: translateY(-1px);
+        }
+
+        .animate-slide-up {
+            animation: slideUp 0.4s ease-out forwards;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <div id="loading-overlay">
+        <div class="w-16 h-16 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+        <p class="mt-4 text-orange-600 font-bold tracking-widest animate-pulse text-sm">LOADING SUITE...</p>
+    </div>
+
+    <!-- Top Navigation -->
+    <nav class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-orange-100 px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center shadow-lg shadow-orange-200">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>
+            </div>
+            <div>
+                <h1 class="font-extrabold text-xl tracking-tight leading-none text-slate-800">GOURMET<span class="text-orange-500">CENTRAL</span></h1>
+                <p class="text-[10px] text-orange-400 font-bold uppercase tracking-widest">Premium Service Suite</p>
+            </div>
+        </div>
+
+        <div class="hidden md:flex gap-2 bg-orange-50 p-1.5 rounded-2xl border border-orange-100">
+            <button onclick="switchView('customer')" id="btn-customer" class="nav-btn px-6 py-2 rounded-xl text-sm font-bold transition-all text-orange-700 hover:bg-white/50">Customer Display</button>
+            <button onclick="switchView('tables')" id="btn-tables" class="nav-btn px-6 py-2 rounded-xl text-sm font-bold transition-all text-orange-700 hover:bg-white/50">Floor Plan</button>
+            <button onclick="switchView('kitchen')" id="btn-kitchen" class="nav-btn px-6 py-2 rounded-xl text-sm font-bold transition-all text-orange-700 hover:bg-white/50">Kitchen Terminal</button>
+        </div>
+
+        <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2 px-4 py-2 bg-green-50 rounded-full border border-green-100">
+                <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span class="text-[10px] font-black text-green-700 uppercase">Live Sync</span>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-6 py-8 pb-32">
+        
+        <!-- VIEW: CUSTOMER DISPLAY -->
+        <div id="view-customer" class="view-transition">
+            <div class="grid lg:grid-cols-12 gap-8">
+                <div class="lg:col-span-8 space-y-6">
+                    <div class="bistro-card p-12 text-center relative overflow-hidden bg-white">
+                        <div class="inline-flex items-center gap-2 px-5 py-2 bg-orange-100 rounded-full mb-8">
+                            <span class="w-2 h-2 bg-orange-500 rounded-full animate-ping"></span>
+                            <span class="text-xs font-black text-orange-600 uppercase tracking-widest">Now Serving</span>
+                        </div>
+                        <div id="serving-token" class="text-[13rem] font-black leading-none tracking-tighter token-hero">---</div>
+                        <p class="text-2xl text-slate-500 font-semibold mt-4 italic">Please approach the service counter</p>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-6">
+                        <div class="bistro-card p-6 bg-orange-50/50 border-orange-100">
+                            <p class="text-[10px] font-black text-orange-400 uppercase mb-2">Est. Wait Time</p>
+                            <div class="flex items-baseline gap-2">
+                                <span class="text-4xl font-black text-slate-800">~12</span>
+                                <span class="text-slate-400 font-bold">MIN</span>
+                            </div>
+                        </div>
+                        <div class="bistro-card p-6">
+                            <p class="text-[10px] font-black text-slate-400 uppercase mb-2">In Queue</p>
+                            <span id="pending-count" class="text-4xl font-black text-slate-800">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-4 space-y-6">
+                    <h3 class="text-sm font-black uppercase tracking-[0.15em] text-orange-600 flex items-center gap-3">
+                        Upcoming Order no.
+                    </h3>
+                    <div id="customer-queue" class="space-y-4">
+                        <!-- Queue items -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: FLOOR PLAN -->
+        <div id="view-tables" class="view-transition hidden space-y-8">
+            <div class="flex justify-between items-end">
+                <div>
+                    <h2 class="text-4xl font-black text-slate-800 tracking-tight">DINING<span class="text-orange-500">AREA</span></h2>
+                    <p class="text-slate-500 font-medium italic">Grid View: Monitor real-time seating</p>
+                </div>
+                <div class="flex gap-4">
+                    <div class="flex items-center gap-2 px-4 py-2 bg-emerald-50 rounded-xl border border-emerald-100 text-emerald-700 font-bold text-xs uppercase">
+                        Available
+                    </div>
+                    <div class="flex items-center gap-2 px-4 py-2 bg-red-50 rounded-xl border border-red-100 text-red-700 font-bold text-xs uppercase">
+                        Occupied
+                    </div>
+                </div>
+            </div>
+
+            <div class="bistro-card p-12 bg-slate-50/20 border-dashed border-2">
+                <div id="tables-grid" class="flex flex-wrap justify-center gap-6">
+                    <!-- Tile Tables injected here -->
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bistro-card p-8 bg-white">
+                    <p class="text-xs font-black text-slate-400 uppercase mb-3">Capacity Load</p>
+                    <div class="flex items-end gap-3">
+                        <span id="occupancy-percent" class="text-5xl font-black text-slate-800">0%</span>
+                        <div class="w-full bg-slate-100 h-3 rounded-full mb-2 overflow-hidden">
+                            <div id="occupancy-bar" class="h-full bg-orange-500 transition-all duration-700" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: KITCHEN TERMINAL -->
+        <div id="view-kitchen" class="view-transition hidden">
+            <div class="grid lg:grid-cols-12 gap-8">
+                <div class="lg:col-span-4 space-y-6">
+                    <div class="bistro-card p-8 border-orange-200 bg-orange-50/30">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-xl font-bold text-slate-800">Active preparation</h2>
+                            <!-- REMOVED: HOT badge removed for cleaner UI -->
+                        </div>
+                        <div class="text-center py-6">
+                            <p class="text-slate-400 text-xs font-black uppercase mb-2">Call to Counter</p>
+                            <div id="kitchen-current-token" class="text-8xl font-black text-slate-800 mb-8">---</div>
+                            <div id="active-items-list" class="flex flex-wrap justify-center gap-2 mb-8 min-h-[40px]">
+                                <!-- Active items -->
+                            </div>
+                            <button onclick="markOrderReady()" class="w-full btn-primary text-white py-5 rounded-2xl font-black text-lg shadow-xl shadow-orange-200">
+                                Mark as Ready
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-8 space-y-6">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-sm font-black uppercase tracking-widest text-slate-500">Order Pipeline</h3>
+                        <button onclick="submitQuickOrder()" class="btn-primary text-white px-8 py-3 rounded-2xl font-black text-sm shadow-lg shadow-orange-200 flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                            New Order
+                        </button>
+                    </div>
+
+                    <div id="kitchen-queue" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Queue items -->
+                    </div>
+
+                    <div id="kitchen-empty" class="hidden text-center py-20 bistro-card border-dashed">
+                        <p class="text-slate-400 font-bold">Kitchen Clear. No pending orders.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-8 py-4 rounded-2xl font-bold opacity-0 pointer-events-none transition-all duration-500 translate-y-8 z-[200] shadow-2xl text-center min-w-[300px]">
+        <!-- Notification -->
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, onSnapshot, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // CONFIG & STATE
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'gourmet-bistro-pro';
+        
+        const app = firebaseConfig ? initializeApp(firebaseConfig) : null;
+        const auth = app ? getAuth(app) : null;
+        const db = app ? getFirestore(app) : null;
+
+        let state = {
+            currentServing: 101,
+            queue: [
+                { token: 102, items: [], ts: Date.now() },
+                { token: 103, items: [], ts: Date.now() + 5000 }
+            ],
+            tables: Array(10).fill(false)
+        };
+
+        let user = null;
+        let audioCtx = null;
+
+        // AUTH & SYNC
+        const init = async () => {
+            if (!auth) {
+                console.warn("Firebase config missing. Local storage mode active.");
+                render();
+                document.getElementById('loading-overlay').style.display = 'none';
+                return;
+            }
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (e) { console.error(e); }
+        };
+
+        if (auth) {
+            onAuthStateChanged(auth, (u) => {
+                user = u;
+                if (user) setupRealtime();
+            });
+        }
+
+        const stateRef = db ? doc(db, 'artifacts', appId, 'public', 'data', 'serviceState', 'primary') : null;
+
+        function setupRealtime() {
+            if (!stateRef) return;
+            onSnapshot(stateRef, (snap) => {
+                if (snap.exists()) {
+                    const data = snap.data();
+                    const oldServing = state.currentServing;
+                    state = data;
+                    render();
+                    if (oldServing !== 0 && oldServing !== state.currentServing) {
+                        notifyReady(state.currentServing);
+                    }
+                } else {
+                    setDoc(stateRef, state);
+                }
+                const loader = document.getElementById('loading-overlay');
+                if (loader) {
+                    loader.style.opacity = '0';
+                    setTimeout(() => loader.style.display = 'none', 600);
+                }
+            }, (err) => {
+                console.error("Firestore Error:", err);
+                const loader = document.getElementById('loading-overlay');
+                if (loader) loader.style.display = 'none';
+            });
+        }
+
+        // VIEW LOGIC
+        window.switchView = (viewId) => {
+            document.querySelectorAll('.view-transition').forEach(v => v.classList.add('hidden'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('nav-btn-active'));
+
+            const targetView = document.getElementById(`view-${viewId}`);
+            if (targetView) targetView.classList.remove('hidden');
+            
+            const btn = document.getElementById(`btn-${viewId}`);
+            if (btn) btn.classList.add('nav-btn-active');
+        };
+
+        // RENDER FUNCTIONS
+        function render() {
+            // Customer Display
+            const servingEl = document.getElementById('serving-token');
+            if (servingEl) servingEl.innerText = state.currentServing.toString().padStart(3, '0');
+            
+            const countEl = document.getElementById('pending-count');
+            if (countEl) countEl.innerText = state.queue.length;
+            
+            const customerQueue = document.getElementById('customer-queue');
+            if (customerQueue) {
+                customerQueue.innerHTML = '';
+                state.queue.slice(0, 5).forEach(order => {
+                    const el = document.createElement('div');
+                    el.className = 'bistro-card p-5 flex justify-between items-center border-l-8 border-orange-400 bg-white animate-slide-up';
+                    el.innerHTML = `
+                        <div>
+                            <span class="text-[10px] font-black text-slate-400 uppercase block mb-1">Order Status: Prep</span>
+                            <span class="text-2xl font-black text-slate-800">#${order.token}</span>
+                        </div>
+                        <div class="px-3 py-1 bg-orange-50 text-orange-600 rounded text-[10px] font-black uppercase">Wait: ~${Math.floor(Math.random()*5)+5}m</div>
+                    `;
+                    customerQueue.appendChild(el);
+                });
+            }
+
+            // Floor Plan - BookMyShow Inspired Graphics
+            const tablesGrid = document.getElementById('tables-grid');
+            if (tablesGrid) {
+                tablesGrid.innerHTML = '';
+                let occupiedCount = 0;
+                state.tables.forEach((isOcc, i) => {
+                    if (isOcc) occupiedCount++;
+                    const tile = document.createElement('div');
+                    tile.className = `table-tile ${isOcc ? 'occupied' : 'available'}`;
+                    tile.onclick = () => toggleTable(i);
+                    tile.innerHTML = `
+                        <div class="table-number text-slate-800">${i + 1}</div>
+                        <div class="table-label">${isOcc ? 'Full' : 'Free'}</div>
+                        <div class="status-indicator"></div>
+                    `;
+                    tablesGrid.appendChild(tile);
+                });
+                
+                const percent = Math.round((occupiedCount / 10) * 100);
+                const percEl = document.getElementById('occupancy-percent');
+                const barEl = document.getElementById('occupancy-bar');
+                if (percEl) percEl.innerText = `${percent}%`;
+                if (barEl) barEl.style.width = `${percent}%`;
+            }
+
+            // Kitchen
+            const kToken = document.getElementById('kitchen-current-token');
+            if (kToken) kToken.innerText = state.currentServing.toString().padStart(3, '0');
+            
+            const kQueue = document.getElementById('kitchen-queue');
+            if (kQueue) {
+                kQueue.innerHTML = '';
+                const empty = document.getElementById('kitchen-empty');
+                if (state.queue.length === 0) {
+                    if (empty) empty.classList.remove('hidden');
+                } else {
+                    if (empty) empty.classList.add('hidden');
+                    state.queue.forEach(order => {
+                        const div = document.createElement('div');
+                        div.className = 'bistro-card p-6 bg-white border-orange-50';
+                        div.innerHTML = `
+                            <div class="flex justify-between items-center mb-4">
+                                <span class="text-3xl font-black italic text-slate-800">#${order.token}</span>
+                                <span class="text-[10px] font-black text-slate-400">${new Date(order.ts).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+                            </div>
+                            <div class="text-sm font-medium text-slate-400 mb-4">
+                                Fast-track service registered
+                            </div>
+                            <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                                <div class="bg-orange-500 h-full w-1/4"></div>
+                            </div>
+                        `;
+                        kQueue.appendChild(div);
+                    });
+                }
+            }
+        }
+
+        // ACTIONS
+        window.toggleTable = async (idx) => {
+            const newTables = [...state.tables];
+            newTables[idx] = !newTables[idx];
+            if (stateRef && user) {
+                await updateDoc(stateRef, { tables: newTables });
+            } else {
+                state.tables = newTables;
+                render();
+            }
+        };
+
+        window.submitQuickOrder = async () => {
+            const lastToken = state.queue.length > 0 
+                ? state.queue[state.queue.length - 1].token 
+                : state.currentServing;
+            
+            const newOrder = {
+                token: lastToken + 1,
+                items: [],
+                ts: Date.now()
+            };
+
+            const updatedQueue = [...state.queue, newOrder];
+            if (stateRef && user) {
+                await updateDoc(stateRef, { queue: updatedQueue });
+            } else {
+                state.queue = updatedQueue;
+                render();
+            }
+            showToast(`Order #${newOrder.token} Logged`);
+        };
+
+        window.markOrderReady = async () => {
+            if (state.queue.length === 0) return;
+            const next = state.queue[0];
+            const newQueue = state.queue.slice(1);
+            
+            if (stateRef && user) {
+                await updateDoc(stateRef, {
+                    currentServing: next.token,
+                    queue: newQueue
+                });
+            } else {
+                state.currentServing = next.token;
+                state.queue = newQueue;
+                render();
+                notifyReady(state.currentServing);
+            }
+        };
+
+        // UTILITIES
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            if (t) {
+                t.innerText = msg;
+                t.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-8');
+                setTimeout(() => {
+                    t.classList.add('opacity-0', 'pointer-events-none', 'translate-y-8');
+                }, 3000);
+            }
+        }
+
+        function notifyReady(token) {
+            showToast(`🛎️ Order #${token} is now READY!`);
+            playDing();
+        }
+
+        async function playDing() {
+            try {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') await audioCtx.resume();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.6);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.6);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.6);
+            } catch(e) {}
+        }
+
+        // START
+        init();
+        window.switchView('customer');
+    </script>
+</body>
+</html>
